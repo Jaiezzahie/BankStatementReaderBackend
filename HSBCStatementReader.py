@@ -147,6 +147,67 @@ def cheque_transaction(current_date, parts):
   return transaction
 
 
+def multi_line_transaction(current_date, line, next_line, parts):
+  desc = line[3:].strip()
+  add_info, amount = "", None
+  if not next_line.startswith(")))") and not next_line.startswith("CR") and not next_line.startswith("DD") and not next_line.startswith("CHQ"):
+    next_parts = next_line.strip().split()
+
+    if next_parts:
+      amount = extract_amount_from_parts(next_parts)
+      if amount is not None:
+        # Remove the number from add_info
+        add_info = " ".join(p for p in next_parts if p.replace(",", "").replace(".", "").isdigit() == False)
+      else:
+        desc += " " + next_line.strip()
+  else:
+    amount = extract_amount_from_parts(parts)
+    desc_parts = [p for p in parts[1:] if p.replace(",", "").replace(".", "").isdigit() == False]
+    desc = " ".join(desc_parts)
+
+  transaction = {
+    "type": "OUT",
+    "date": current_date,
+    "desc": desc + " " + add_info,
+    "tx_type": ")))",
+    "cheque_number": None,
+    "paid_in": None,
+    "paid_out": amount
+  }
+
+  return transaction
+
+def visa_transaction(current_date, line, next_line, parts):
+  desc = line[3:].strip()
+  add_info, amount = "", None
+  if not next_line.startswith("VIS") and not next_line.startswith("CR") and not next_line.startswith("DD") and not next_line.startswith("CHQ"):
+    next_parts = next_line.strip().split()
+
+    if next_parts:
+      amount = extract_amount_from_parts(next_parts)
+      if amount is not None:
+        # Remove the number from add_info
+        add_info = " ".join(p for p in next_parts if p.replace(",", "").replace(".", "").isdigit() == False)
+      else:
+        desc += " " + next_line.strip()
+  else:
+    amount = extract_amount_from_parts(parts)
+    desc_parts = [p for p in parts[1:] if p.replace(",", "").replace(".", "").isdigit() == False]
+    desc = " ".join(desc_parts)
+
+  transaction = {
+    "type": "OUT",
+    "date": current_date,
+    "desc": desc + " " + add_info,
+    "tx_type": "VIS",
+    "cheque_number": None,
+    "paid_in": None,
+    "paid_out": amount
+  }
+
+  return transaction
+
+
 def parse_transaction_line(line, next_line, current_date):
   transaction = None
   line = line.strip()
@@ -163,6 +224,10 @@ def parse_transaction_line(line, next_line, current_date):
     transaction = standing_order_transaction(current_date, line, next_line, parts)
   elif line.startswith("CHQ"):
     transaction = cheque_transaction(current_date, parts)
+  elif line.startswith("VIS"):
+    transaction = visa_transaction(current_date, line, next_line, parts)
+  elif line.startswith(")))"):
+    transaction = multi_line_transaction(current_date, line, next_line, parts)
 
   return transaction
 

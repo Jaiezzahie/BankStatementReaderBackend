@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
-import BankStatementReader
+import HSBCStatementReader
 import pandas as pd
 
 app = Flask(__name__)
@@ -35,8 +35,8 @@ def upload_file():
 
 def hsbc(file_path):
   try:
-    pages = BankStatementReader.extract_text(file_path)
-    transactions, csv_name = BankStatementReader.extract_transactions(pages)
+    pages = HSBCStatementReader.extract_text(file_path)
+    transactions, csv_name = HSBCStatementReader.extract_transactions(pages)
   except Exception as e:
     return jsonify({"error": f"Failed to parse file: {str(e)}"}), 500
 
